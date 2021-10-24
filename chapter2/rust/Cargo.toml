@@ -1,0 +1,25 @@
+[package]
+authors = ["Naoki Fujita <fujitanaoki0718@gmail.com>"]
+edition = "2021"
+license = "MIT"
+name = "web_engineer_in_rust"
+rust-version = "1.56"
+version = "0.1.0"
+
+[dependencies]
+anyhow = "1.0.44"
+axum = {version = "0.2.8", features = ["headers", "http2", "ws", "tower-log"]}
+chrono = "0.4.19"
+csv = "1.1.6"
+serde = {version = "1.0.130", features = ["derive"]}
+serde_json = "1.0.68"
+tokio = {version = "1.12.0", features = ["full"]}
+tower = "0.4.8"
+
+[[bin]]
+name = "run_calc_batch"
+path = "src/run_calc_batch.rs"
+
+[[bin]]
+name = "run_calc_stream"
+path = "src/run_calc_stream.rs"
