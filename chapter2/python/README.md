@@ -1,4 +1,8 @@
-# ディレクトリの解説  
+## 各スクリプトファイルの実行
+```
+poetry run python run_calc_batch_list.py # poetryに管理された仮想環境での実行
+```
+## ディレクトリの解説  
 - run_calc_batch_list.py
   - 純粋なpythonのみで移動平均を計算するバッチスクリプトです
 
@@ -20,3 +24,7 @@
 
 - poetry.lock
   - poetryが生成する外部ライブラリのバージョンリストです
+
+## 注意事項
+このnumpyはpipを使ってインストールされているのでopenblasが使われます。
+anacondaを使うことでMKLなどより高速化できるかもしれません。
