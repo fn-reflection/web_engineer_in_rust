@@ -1,7 +1,13 @@
 import math
+import sys
+import psutil
 from datetime import datetime
 from typing import List
 import pandas as pd
+
+
+def process_memory_usage_mb():
+    return psutil.Process().memory_info().rss/1e6
 
 
 def calc_batch_list(calc_strategy, average_length) -> List:
@@ -18,6 +24,8 @@ def calc_batch_list(calc_strategy, average_length) -> List:
     print(f"移動平均の最後の要素：{moving_averages[-1]}")
     print(f"csvロードにかかった時間：{after_read - before_read }秒")
     print(f"移動平均計算にかかった時間：{after_calc - after_read}秒")
+    print(f"リストのメモリ使用量(参考)：{sys.getsizeof(moving_averages)/1e6}MB")
+    print(f"プロセスメモリ使用量(参考)：{process_memory_usage_mb()}MB")
     return moving_averages
 
 
