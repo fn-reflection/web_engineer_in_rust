@@ -1,3 +1,27 @@
+const SIMD_LANES: usize = 16;
+
+// window.iter().sum::<f64>の代わりに使うと、大きいNに対して有効
+pub fn simd_sum(values: &[f64]) -> f64 {
+    let chunks = values.chunks_exact(SIMD_LANES);
+    let remainder = chunks.remainder();
+
+    let sum = chunks.fold([0.0; SIMD_LANES], |mut acc, chunk| {
+        let chunk: [f64; SIMD_LANES] = chunk.try_into().unwrap();
+        for i in 0..SIMD_LANES {
+            acc[i] += chunk[i];
+        }
+        acc
+    });
+
+    let remainder: f64 = remainder.iter().copied().sum();
+
+    let mut reduced = 0.0;
+    for i in 0..SIMD_LANES {
+        reduced += sum[i];
+    }
+    reduced + remainder
+}
+
 fn moving_average_batch_naive(nums: &[f64], average_length: usize) -> anyhow::Result<Vec<f64>> {
     let size = nums.len() as i64 - average_length as i64 + 1;
     if size <= 0 {
