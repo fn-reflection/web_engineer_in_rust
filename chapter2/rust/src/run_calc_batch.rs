@@ -76,6 +76,20 @@ fn calc_batch<F: FnOnce(&[f64], usize) -> anyhow::Result<Vec<f64>>>(
         "移動平均計算にかかった時間：{:?}秒",
         calc_time.num_nanoseconds().unwrap() as f64 / 1e9
     );
+    println!(
+        "Vecの使用メモリ量(参考)：{:?}MB",
+        std::mem::size_of_val(&*moving_averages) as f64 / 1e6
+    );
+    println!(
+        "プロセスの使用メモリ量(参考)：{:?}MB",
+        psutil::process::Process::new(std::process::id())
+            .unwrap()
+            .memory_info()
+            .unwrap()
+            .rss() as f64
+            / 1e6
+    );
+
     Ok(moving_averages)
 }
 fn main() -> anyhow::Result<()> {

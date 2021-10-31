@@ -6,14 +6,17 @@ fn get_csv_path(relative_path: &str) -> std::path::PathBuf {
         .join(relative_path)
 }
 
-fn read_csv(relative_path: &str) -> anyhow::Result<Vec<f64>> {
+fn read_csv(relative_path: &str) -> anyhow::Result<std::sync::mpsc::Receiver<f64>> {
+    let (tx, rx) = std::sync::mpsc::channel::<f64>();
     let csv_path = get_csv_path(relative_path);
     let mut csv_reader = csv::Reader::from_path(csv_path)?;
-    let nums = csv_reader
-        .deserialize::<f64>()
-        .filter_map(|row_result| row_result.ok())
-        .collect::<Vec<_>>();
-    Ok(nums)
+    let _ = std::thread::spawn(move || {
+        csv_reader
+            .deserialize::<f64>()
+            .filter_map(|row_result| row_result.ok())
+            .for_each(|row| tx.send(row).unwrap())
+    });
+    Ok(rx)
 }
 
 #[derive(Debug, Clone)]
@@ -46,42 +49,11 @@ impl MovingAverage {
     }
 }
 
-fn calc_batch(average_length: usize) -> anyhow::Result<Vec<f64>> {
+fn calc_stream_channel(average_length: usize) -> anyhow::Result<Vec<f64>> {
     let before_read = chrono::Utc::now();
-    let nums = read_csv("data/time_series.csv")?;
-    let after_read = chrono::Utc::now();
     let mut ma = MovingAverage::new(average_length);
-    let moving_averages = nums
+    let moving_averages = read_csv("data/time_series.csv")?
         .into_iter()
-        .filter_map(|new_val| ma.latest(new_val))
-        .collect::<Vec<_>>();
-    let after_calc = chrono::Utc::now();
-    println!("移動平均の長さ：{}", average_length);
-    println!(
-        "移動平均の最後の要素：{:?}",
-        moving_averages[moving_averages.len() - 1]
-    );
-    let load_time = after_read - before_read;
-    let calc_time = after_calc - after_read;
-    println!(
-        "csvロードにかかった時間：{:?}秒",
-        load_time.num_nanoseconds().unwrap() as f64 / 1e9
-    );
-    println!(
-        "移動平均計算にかかった時間：{:?}秒",
-        calc_time.num_nanoseconds().unwrap() as f64 / 1e9
-    );
-    Ok(moving_averages)
-}
-
-fn calc_stream(average_length: usize) -> anyhow::Result<Vec<f64>> {
-    let before_read = chrono::Utc::now();
-    let csv_path = get_csv_path("data/time_series.csv");
-    let mut csv_reader = csv::Reader::from_path(csv_path)?;
-    let mut ma = MovingAverage::new(average_length);
-    let moving_averages = csv_reader
-        .deserialize::<f64>()
-        .filter_map(|row_result| row_result.ok())
         .filter_map(|new_val| ma.latest(new_val))
         .collect::<Vec<_>>();
     let after_calc = chrono::Utc::now();
@@ -112,10 +84,7 @@ fn calc_stream(average_length: usize) -> anyhow::Result<Vec<f64>> {
 }
 
 fn main() -> anyhow::Result<()> {
-    let _ma1 = calc_batch(7)?;
-    let _ma2 = calc_stream(7)?;
-    let _ma3 = calc_batch(5000)?;
-    let _ma4 = calc_stream(5000)?;
-    println!("{:?}", _ma1.iter().take(5).collect::<Vec<_>>());
+    let _ma2 = calc_stream_channel(7)?;
+    let _ma4 = calc_stream_channel(5000)?;
     Ok(())
 }

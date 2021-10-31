@@ -11,9 +11,12 @@ anyhow = "1.0.44"
 axum = {version = "0.2.8", features = ["headers", "http2", "ws", "tower-log"]}
 chrono = "0.4.19"
 csv = "1.1.6"
+csv-async = {version = "1.1", features = ["tokio"]}
+psutil = "3.2.1"
 serde = {version = "1.0.130", features = ["derive"]}
 serde_json = "1.0.68"
 tokio = {version = "1.12.0", features = ["full"]}
+tokio-stream = "0.1.8"
 tower = "0.4.8"
 
 [[bin]]
@@ -23,3 +26,11 @@ path = "src/run_calc_batch.rs"
 [[bin]]
 name = "run_calc_stream"
 path = "src/run_calc_stream.rs"
+
+[[bin]]
+name = "run_calc_stream_async"
+path = "src/run_calc_stream_async.rs"
+
+[[bin]]
+name = "run_calc_stream_channel"
+path = "src/run_calc_stream_channel.rs"
