@@ -23,31 +23,36 @@ pub fn simd_sum(values: &[f64]) -> f64 {
 }
 
 fn moving_average_batch_naive(nums: &[f64], average_length: usize) -> anyhow::Result<Vec<f64>> {
-    let size = nums.len() as i64 - average_length as i64 + 1;
+    let size = nums.len() as i64 - average_length as i64 + 1; // 出力される移動平均の数列のサイズ
     if size <= 0 {
+        // サイズが0以下ならばエラー値を関数の戻り値として返す
         return Err(anyhow::anyhow!(
             "average length must be less than nums array length"
         ));
     }
     let averages = nums
-        .windows(average_length)
-        .map(|window| window.iter().sum::<f64>() / (window.len() as f64))
-        .collect::<Vec<_>>();
-    Ok(averages)
+        .windows(average_length) // 直近N個のデータを記憶しながらループを回す
+        .map(|window| window.iter().sum::<f64>() / (window.len() as f64)) // 直近N個のデータの総和をとり、Nで割る
+        .collect::<Vec<_>>(); // 結果を可変長配列に格納する
+    Ok(averages) // 可変長配列を関数の戻り値として返す、returnは省略している
 }
 
 fn moving_average_batch_online(nums: &[f64], average_length: usize) -> anyhow::Result<Vec<f64>> {
-    let size = nums.len() as i64 - average_length as i64 + 1;
+    let size = nums.len() as i64 - average_length as i64 + 1; // 出力される移動平均の数列のサイズ
     if size <= 0 {
+        // サイズが0以下ならばエラー値を関数の戻り値として返す
         return Err(anyhow::anyhow!(
             "average length must be less than nums array length"
         ));
     }
     let mut res = Vec::with_capacity(nums.len());
+    // 直近N個のデータの総和を計算する、最初のデータは素直に総和をとる
     res.push(nums[0..average_length].iter().sum::<f64>());
+    // 最初のデータ以外は前の総和から新しいデータを足して、古いデータを引くことで計算し、計算量を減らす
     for i in average_length..nums.len() {
         res.push(nums[i] as f64 - nums[i - average_length] as f64 + res[i - average_length])
     }
+    // 出力するデータをNで割る、後で割るのは計算誤差を小さくするため
     for i in 0..(nums.len() - average_length + 1) {
         res[i] /= average_length as f64;
     }
@@ -63,12 +68,12 @@ fn get_csv_path(relative_path: &str) -> std::path::PathBuf {
 }
 
 fn read_csv(relative_path: &str) -> anyhow::Result<Vec<f64>> {
-    let csv_path = get_csv_path(relative_path);
+    let csv_path = get_csv_path(relative_path); // csvデータの絶対パスを取得する
     let mut csv_reader = csv::Reader::from_path(csv_path)?;
     let nums = csv_reader
-        .deserialize::<f64>()
-        .filter_map(|row_result| row_result.ok())
-        .collect::<Vec<_>>();
+        .deserialize::<f64>() // 何もしないと行データは文字列として読み込まれるので、f64に変換する
+        .filter_map(|row_result| row_result.ok()) // f64として読み込めなかった行を無視する
+        .collect::<Vec<_>>(); // 可変長配列に格納する
     Ok(nums)
 }
 
@@ -76,11 +81,11 @@ fn calc_batch<F: FnOnce(&[f64], usize) -> anyhow::Result<Vec<f64>>>(
     strategy: F,
     average_length: usize,
 ) -> anyhow::Result<Vec<f64>> {
-    let before_read = chrono::Utc::now();
-    let nums = read_csv("data/time_series.csv")?;
-    let after_read = chrono::Utc::now();
-    let moving_averages = strategy(&nums, average_length)?;
-    let after_calc = chrono::Utc::now();
+    let before_read = chrono::Utc::now(); //  データ読み込み前の時刻記録
+    let nums = read_csv("data/time_series.csv")?; // 指定したcsvデータをf64の可変長配列として読み取る
+    let after_read = chrono::Utc::now(); // データ読み込み後の時刻記録
+    let moving_averages = strategy(&nums, average_length)?; // 関数を用いて移動平均計算
+    let after_calc = chrono::Utc::now(); // 移動平均計算後の時刻記録
     println!(
         "移動平均計算に使用した関数：{:?}",
         std::any::type_name::<F>()
@@ -113,7 +118,6 @@ fn calc_batch<F: FnOnce(&[f64], usize) -> anyhow::Result<Vec<f64>>>(
             .rss() as f64
             / 1e6
     );
-
     Ok(moving_averages)
 }
 fn main() -> anyhow::Result<()> {
