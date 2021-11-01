@@ -1,3 +1,4 @@
+import csv
 import math
 import sys
 import psutil
@@ -9,13 +10,21 @@ import pandas as pd
 def process_memory_usage_mb():
     return psutil.Process().memory_info().rss/1e6
 
+def read_csv(relative_path):
+    res = []
+    with open(relative_path) as f:
+        reader = csv.reader(f)
+        next(reader) # ヘッダーをskipする
+        for row in reader:
+            res.append(float(row[0])) # フロート型に変換して読み込む
+    return res
 
 def calc_batch_list(calc_strategy, average_length) -> List:
     """
     csvからpythonのlistを読み込み、バッチ的に移動平均を計算させる
     """
     before_read = datetime.utcnow()  # データ読み込み前の時刻記録
-    nums = list(pd.read_csv("../data/time_series.csv")['value'].values)  # データ一括読み込み
+    nums = read_csv("../data/time_series.csv") # データ一括読み込み
     after_read = datetime.utcnow()  # データ読み込み後の時刻記録
     moving_averages = calc_strategy(nums, average_length)  # 関数を用いて移動平均計算
     after_calc = datetime.utcnow()  # 移動平均計算後の時刻記録
