@@ -124,8 +124,9 @@ fn main() -> anyhow::Result<()> {
     let ma1 = calc_batch(moving_average_batch_naive, 7)?;
     let ma2 = calc_batch(moving_average_batch_online, 7)?;
     assert_eq!(ma1, ma2);
-    let _ma3 = calc_batch(moving_average_batch_naive, 5000)?;
-    let _ma4 = calc_batch(moving_average_batch_online, 5000)?;
+    let ma3 = calc_batch(moving_average_batch_naive, 5000)?;
+    let ma4 = calc_batch(moving_average_batch_online, 5000)?;
+    assert_eq!(ma3, ma4);
     Ok(())
 }
 

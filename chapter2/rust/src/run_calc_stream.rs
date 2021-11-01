@@ -112,10 +112,11 @@ fn calc_stream(average_length: usize) -> anyhow::Result<Vec<f64>> {
 }
 
 fn main() -> anyhow::Result<()> {
-    let _ma1 = calc_batch(7)?;
-    let _ma2 = calc_stream(7)?;
-    let _ma3 = calc_batch(5000)?;
-    let _ma4 = calc_stream(5000)?;
-    println!("{:?}", _ma1.iter().take(5).collect::<Vec<_>>());
+    let ma1 = calc_batch(7)?;
+    let ma2 = calc_stream(7)?;
+    assert_eq!(ma1, ma2);
+    let ma3 = calc_batch(5000)?;
+    let ma4 = calc_stream(5000)?;
+    assert_eq!(ma3, ma4);
     Ok(())
 }
