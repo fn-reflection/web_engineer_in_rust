@@ -1,9 +1,19 @@
 from datetime import datetime
+import csv
 import collections
 import numpy as np
 import pandas as pd
 import numba
 
+
+def read_csv(relative_path):
+    res = []
+    with open(relative_path) as f:
+        reader = csv.reader(f)
+        next(reader) # ヘッダーをskipする
+        for row in reader:
+            res.append(float(row[0])) # フロート型に変換して読み込む
+    return res
 
 class MovingAveragePython(object):
     def __init__(self, period):
@@ -73,15 +83,18 @@ def calc_batch(average_length) -> np.ndarray:
 
 def calc_stream(constructor, average_length) -> np.ndarray:
     before_read = datetime.utcnow()  # データ読み込み前の時刻記録
-    nums = pd.read_csv("../data/time_series.csv")['value'].values  # データ一括読み込み
-    after_read = datetime.utcnow()  # データ読み込み後の時刻記録
+    moving_averages = []
     ma = constructor(average_length)
-    moving_averages = [ma.latest(num) for num in nums]  # jitclassを用いて移動平均計算
+    with open("../data/time_series.csv") as f:
+        reader = csv.reader(f)
+        next(reader) # ヘッダーをskipする
+        for row in reader:
+            num = float(row[0])
+            moving_averages.append(ma.latest(num))
     after_calc = datetime.utcnow()  # 移動平均計算後の時刻記録
     print(f"移動平均の長さ：{average_length}")
     print(f"移動平均の最後の要素：{moving_averages[-1]}")
-    print(f"csvロードにかかった時間：{after_read - before_read }秒")
-    print(f"移動平均計算にかかった時間：{after_calc - after_read}秒")
+    print(f"計算にかかった時間：{after_calc - before_read}秒")
     return moving_averages
 
 
