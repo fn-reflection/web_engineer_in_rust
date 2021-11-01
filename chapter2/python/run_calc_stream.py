@@ -1,9 +1,15 @@
 from datetime import datetime
 import csv
+import sys
 import collections
 import numpy as np
 import pandas as pd
 import numba
+import psutil
+
+
+def process_memory_usage_mb():
+    return psutil.Process().memory_info().rss/1e6
 
 
 def read_csv(relative_path):
@@ -95,6 +101,8 @@ def calc_stream(constructor, average_length) -> np.ndarray:
     print(f"移動平均の長さ：{average_length}")
     print(f"移動平均の最後の要素：{moving_averages[-1]}")
     print(f"計算にかかった時間：{after_calc - before_read}秒")
+    print(f"リストのメモリ使用量(参考)：{sys.getsizeof(moving_averages)/1e6}MB")
+    print(f"プロセスメモリ使用量(参考)：{process_memory_usage_mb()}MB")
     return moving_averages
 
 
