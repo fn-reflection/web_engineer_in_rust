@@ -1,6 +1,8 @@
 ## 各スクリプトファイルの実行
 ```
-poetry run python run_calc_batch_list.py # poetryに管理された仮想環境での実行
+poetry run python run_calc_batch_list.py # pure pythonのバッチ計算プログラムを動かす
+poetry run python run_calc_batch_numpy.py # numpyのバッチ計算プログラムを動かす
+poetry run python run_calc_stream.py # ストリーム計算プログラムを動かす
 ```
 ## ディレクトリの解説  
 - run_calc_batch_list.py
@@ -27,4 +29,4 @@ poetry run python run_calc_batch_list.py # poetryに管理された仮想環境�
 
 ## 注意事項
 このnumpyはpipを使ってインストールされているのでopenblasが使われます。
-anacondaを使うことでMKLなどより高速化できるかもしれません。
+anacondaを使うことでより高速化できるかもしれません。
