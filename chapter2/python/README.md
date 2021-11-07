@@ -1,5 +1,8 @@
 ## 各スクリプトファイルの実行
+パッケージ管理にpoetryというライブラリを使っているので、インストールしてください。
+https://python-poetry.org/docs/
 ```
+poetry install # 依存ライブラリをインストール
 poetry run python run_calc_batch_list.py # pure pythonのバッチ計算プログラムを動かす
 poetry run python run_calc_batch_numpy.py # numpyのバッチ計算プログラムを動かす
 poetry run python run_calc_stream.py # ストリーム計算プログラムを動かす
