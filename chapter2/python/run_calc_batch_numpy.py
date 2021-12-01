@@ -64,7 +64,7 @@ def moving_average_batch_numpy_numba_online(nums: np.ndarray, average_length: in
 if __name__ == "__main__":
     print(f"python version: {sys.version}")
     print(f"numpy version: {np.__version__}")
-    print(f"numpy config: {np.show_config()}")
+    np.show_config()
     print(f"numba version: {numba.__version__}")
     ma1 = calc_batch_ndarray(calc_strategy=moving_average_batch_numpy, average_length=7)
     ma2 = calc_batch_ndarray(calc_strategy=moving_average_batch_pandas, average_length=7)
