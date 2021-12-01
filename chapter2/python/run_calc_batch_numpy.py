@@ -44,7 +44,7 @@ def moving_average_batch_numpy_numba_naive(nums: np.ndarray, average_length: int
     N_i = nums.shape[0]
     res = np.empty_like(nums, dtype=np.float64)
     for i in range(average_length-1, N_i):
-        res[i] = sum(nums[i-average_length+1:i+1]) / average_length
+        res[i] = np.sum(nums[i-average_length+1:i+1]) / average_length
     return res[average_length-1:]
 
 
