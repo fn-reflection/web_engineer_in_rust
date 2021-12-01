@@ -1,5 +1,6 @@
 from datetime import datetime
 import math
+import sys
 import numpy as np
 import pandas as pd
 import numba
@@ -22,8 +23,6 @@ def calc_batch_ndarray(calc_strategy, average_length) -> np.ndarray:
     print(f"移動平均の最後の要素：{moving_averages[-1]}")
     print(f"csvロードにかかった時間：{after_read - before_read }秒")
     print(f"移動平均計算にかかった時間：{after_calc - after_read}秒")
-    print(f"配列のメモリ使用量(参考)：{moving_averages.nbytes/1e6}MB")
-    print(f"プロセスメモリ使用量(参考)：{process_memory_usage_mb()}MB")
     return moving_averages
 
 
@@ -63,6 +62,10 @@ def moving_average_batch_numpy_numba_online(nums: np.ndarray, average_length: in
 
 
 if __name__ == "__main__":
+    print(f"python version: {sys.version}")
+    print(f"numpy version: {np.__version__}")
+    print(f"numpy config: {np.show_config()}")
+    print(f"numba version: {numba.__version__}")
     ma1 = calc_batch_ndarray(calc_strategy=moving_average_batch_numpy, average_length=7)
     ma2 = calc_batch_ndarray(calc_strategy=moving_average_batch_pandas, average_length=7)
     assert math.isclose(np.sum(ma1-ma2), 0)  # ma1とma2はほぼ同じであることを確認
