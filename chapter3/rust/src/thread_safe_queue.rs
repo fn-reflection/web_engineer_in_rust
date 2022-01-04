@@ -29,7 +29,7 @@ impl Measurement {
 fn main() -> anyhow::Result<()> {
     // キューの生成、キューの所有権はメインスレッドが持つ
     let queue = Vec::new();
-    // キューのロック付(Mutex)の共有参照(Arc)を定義する
+    // ①：キューのロック付(Mutex)の共有参照(Arc)を定義する
     let arc_queue = Arc::new(Mutex::new(queue));
     // キューの共有参照をコピー(そうしないと複数のスレッドからアクセスできない)
     let arc_queue1 = arc_queue.clone();
@@ -46,6 +46,7 @@ fn main() -> anyhow::Result<()> {
     let push_thread2 = std::thread::spawn(move || {
         for i in 1..=10000 {
             let m = Measurement::new(i as f64, 2);
+            // ②キューのロックを取りキューに観測値を預ける②
             arc_queue2.lock().unwrap().push(m);
         }
     });
