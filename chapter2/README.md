@@ -16,3 +16,6 @@ pythonでもRustでもモジュール抽象化は簡単にできますので、�
 [PythonのREADME](./python/README.md)
 
 [RustのREADME](./rust/README.md)
+
+## 記事
+[Rustは本当に動作が高速なのか？　Pythonとの比較で分かる、Rustのパフォーマンス特性](https://atmarkit.itmedia.co.jp/ait/articles/2112/01/news005.html)
