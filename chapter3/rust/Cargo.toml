@@ -1,0 +1,17 @@
+[package]
+authors = ["Naoki Fujita <fujitanaoki0718@gmail.com>"]
+edition = "2021"
+license = "MIT"
+name = "web_engineer_in_rust"
+rust-version = "1.56"
+version = "0.1.0"
+
+[dependencies]
+anyhow = "1.0.52"
+chrono = "0.4.19"
+tokio = {version = "1.15.0", features = ["full"]}
+tokio-stream = "0.1.8"
+
+[[bin]]
+name = "thread_safe_queue"
+path = "src/thread_safe_queue.rs"
