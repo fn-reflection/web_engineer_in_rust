@@ -15,3 +15,8 @@ tokio-stream = "0.1.8"
 [[bin]]
 name = "thread_safe_queue"
 path = "src/thread_safe_queue.rs"
+
+[[bin]]
+name = "trait_abstraction"
+path = "src/trait_abstraction.rs"
+
