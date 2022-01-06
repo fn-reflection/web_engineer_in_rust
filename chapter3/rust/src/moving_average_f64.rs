@@ -28,12 +28,17 @@ impl MovingAverage {
     }
 }
 
-fn calc_stream(average_length: usize) -> anyhow::Result<Vec<f64>> {
-    let input_data = [1,2,3,4,5,6,7,8,9,10];
+fn calc_stream(average_length: usize) -> Vec<f64> {
+    let input_data = 1..=10;
     let mut ma = MovingAverage::new(average_length);
     let moving_averages = input_data
+        .map(|n| n as f64) // このf64への変換を入れれば型があうが・・・
         .filter_map(|new_val| ma.latest(new_val))
         .collect::<Vec<_>>();
-    print(moving_averages);
-    Ok(moving_averages)
+    moving_averages
+}
+
+pub fn main() -> () {
+    let ma = calc_stream(2);
+    println!("{:?}", ma);
 }

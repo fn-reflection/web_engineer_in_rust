@@ -9,6 +9,7 @@ version = "0.1.0"
 [dependencies]
 anyhow = "1.0.52"
 chrono = "0.4.19"
+num-traits = "0.2.14"
 tokio = {version = "1.15.0", features = ["full"]}
 tokio-stream = "0.1.8"
 
@@ -17,6 +18,13 @@ name = "thread_safe_queue"
 path = "src/thread_safe_queue.rs"
 
 [[bin]]
-name = "trait_abstraction"
-path = "src/trait_abstraction.rs"
+name = "moving_average_f64"
+path = "src/moving_average_f64.rs"
 
+[[bin]]
+name = "moving_average_trait1"
+path = "src/moving_average_trait1.rs"
+
+[[bin]]
+name = "moving_average_trait2"
+path = "src/moving_average_trait2.rs"
