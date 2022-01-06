@@ -9,6 +9,7 @@ version = "0.1.0"
 [dependencies]
 anyhow = "1.0.52"
 chrono = "0.4.19"
+itertools = "0.10.3"
 num-traits = "0.2.14"
 tokio = {version = "1.15.0", features = ["full"]}
 tokio-stream = "0.1.8"
@@ -22,9 +23,9 @@ name = "moving_average_f64"
 path = "src/moving_average_f64.rs"
 
 [[bin]]
-name = "moving_average_trait1"
-path = "src/moving_average_trait1.rs"
+name = "moving_average_trait"
+path = "src/moving_average_trait.rs"
 
 [[bin]]
-name = "moving_average_trait2"
-path = "src/moving_average_trait2.rs"
+name = "use_trait_extension"
+path = "src/use_trait_extension.rs"

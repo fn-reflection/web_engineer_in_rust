@@ -62,7 +62,7 @@ fn main() -> anyhow::Result<()> {
     });
     // 2つのデータ生成スレッドの終了を待つ
     for thread in [push_thread1, push_thread2] {
-        thread.join();
+        let _ = thread.join();
     }
     Ok(())
 }

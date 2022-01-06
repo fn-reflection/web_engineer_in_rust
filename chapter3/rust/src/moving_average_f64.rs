@@ -32,7 +32,7 @@ fn calc_stream(average_length: usize) -> Vec<f64> {
     let input_data = 1..=10;
     let mut ma = MovingAverage::new(average_length);
     let moving_averages = input_data
-        .map(|n| n as f64) // このf64への変換を入れれば型があうが・・・
+        // .map(|n| n as f64) // このf64への変換を入れれば型があうが・・・
         .filter_map(|new_val| ma.latest(new_val))
         .collect::<Vec<_>>();
     moving_averages
