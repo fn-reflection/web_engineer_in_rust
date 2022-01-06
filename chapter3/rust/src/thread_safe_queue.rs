@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
     let push_thread2 = std::thread::spawn(move || {
         for i in 1..=10000 {
             let m = Measurement::new(i as f64, 2);
-            // ②キューのロックを取りキューに観測値を預ける②
+            // ②: キューのロックを取りキューに観測値を預ける②
             arc_queue2.lock().unwrap().push(m);
         }
     });
