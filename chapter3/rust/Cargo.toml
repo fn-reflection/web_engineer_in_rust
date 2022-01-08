@@ -3,18 +3,18 @@ authors = ["Naoki Fujita <fujitanaoki0718@gmail.com>"]
 edition = "2021"
 license = "MIT"
 name = "web_engineer_in_rust"
-rust-version = "1.56"
 version = "0.1.0"
 
 [dependencies]
+# 利用するライブラリ(クレート名)とバージョン
 anyhow = "1.0.52"
 chrono = "0.4.19"
 itertools = "0.10.3"
 num-traits = "0.2.14"
-tokio = {version = "1.15.0", features = ["full"]}
-tokio-stream = "0.1.8"
 
 [[bin]]
+# エントリーポイントを作成
+# cargo run --bin thread_safe_queueで実行可能
 name = "thread_safe_queue"
 path = "src/thread_safe_queue.rs"
 
