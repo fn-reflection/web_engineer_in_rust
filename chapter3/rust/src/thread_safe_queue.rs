@@ -1,8 +1,8 @@
 use chrono::NaiveDateTime; // タイムゾーン無しの日時
-use std::sync::{Arc, Mutex}; // スレッドセーフな共有参照
+use std::sync::{Arc, Mutex}; // スレッドセーフな共有参照とMutexロックを使用
 
 #[derive(Copy, Clone, Debug)]
-// 観測データの構造体を定義
+// 観測データの構造体(データの組)を定義
 struct Measurement {
     // 日時(タイムゾーン無し)
     time: NaiveDateTime,
@@ -33,25 +33,29 @@ fn main() -> anyhow::Result<()> {
     let arc_queue = Arc::new(Mutex::new(queue));
     // キューの共有参照をコピー(そうしないと複数のスレッドからアクセスできない)
     let arc_queue1 = arc_queue.clone();
-    // データ作成スレッド1を作成、moveで共有参照を別スレッドに移動
-    let push_thread1 = std::thread::spawn(move || {
+    // データ記録スレッド1を作成
+    // moveで共有参照を別スレッドに移動
+    // 共有参照を移動＝キューの参照権限を別スレッドにも渡したと考えるとわかりやすい
+    // Mutexがついているので、編集権限も渡せる
+    let record_thread1 = std::thread::spawn(move || {
         for i in 1..=10000 {
             let m = Measurement::new(i as f64, 1);
+            // ②: キューのロックを取りキューに観測値を記録
             arc_queue1.lock().unwrap().push(m);
         }
     });
 
     let arc_queue2 = arc_queue.clone();
-    // データ作成スレッド2を作成
-    let push_thread2 = std::thread::spawn(move || {
+    // データ記録スレッド2を作成
+    let record_thread2 = std::thread::spawn(move || {
         for i in 1..=10000 {
             let m = Measurement::new(i as f64, 2);
-            // ②: キューのロックを取りキューに観測値を預ける②
             arc_queue2.lock().unwrap().push(m);
         }
     });
 
     // データ観測スレッドを作成
+    // 1ミリ秒のスリープを挟みつつ、キューの最新値を出力
     let observe_thread = std::thread::spawn(move || loop {
         {
             let queue = arc_queue.lock().unwrap();
@@ -60,8 +64,8 @@ fn main() -> anyhow::Result<()> {
         }
         std::thread::sleep(std::time::Duration::from_millis(1));
     });
-    // 2つのデータ生成スレッドの終了を待つ
-    for thread in [push_thread1, push_thread2] {
+    // 2つのデータ記録スレッドの終了を待つ
+    for thread in [record_thread1, record_thread2] {
         let _ = thread.join();
     }
     Ok(())
