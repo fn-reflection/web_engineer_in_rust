@@ -36,7 +36,6 @@ fn main() -> anyhow::Result<()> {
     // データ記録スレッド1を作成
     // moveで共有参照を別スレッドに移動
     // 共有参照を移動＝キューの参照権限を別スレッドにも渡したと考えるとわかりやすい
-    // Mutexがついているので、編集権限も渡せる
     let record_thread1 = std::thread::spawn(move || {
         for i in 1..=10000 {
             let m = Measurement::new(i as f64, 1);
@@ -57,10 +56,13 @@ fn main() -> anyhow::Result<()> {
     // データ観測スレッドを作成
     // 1ミリ秒のスリープを挟みつつ、キューの最新値を出力
     let observe_thread = std::thread::spawn(move || loop {
+        // ここで{}と書いてスコープを作ることには意味がある
         {
-            let queue = arc_queue.lock().unwrap();
-            let latest = queue.last();
+            // ロックを取得
+            let queue_lock = arc_queue.lock().unwrap();
+            let latest = queue_lock.last();
             println!("{:?}", latest);
+            // スコープによりここでqueue_lock変数が無効になる→ロックが解放される
         }
         std::thread::sleep(std::time::Duration::from_millis(1));
     });
