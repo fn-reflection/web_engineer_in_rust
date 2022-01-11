@@ -10,5 +10,8 @@ https://www.rust-lang.org/ja/tools/install
 ## command
 ### build option
 ```
-cargo run --release --bin thread_safe_queue # OSスレッドによる並行計算プログラム
+cargo run --release --bin thread_safe_queue # スレッドセーフキューのサンプル実行
+cargo run --release --bin moving_average_f64 # トレイト無しの移動平均計算(コンパイルできない)
+cargo run --release --bin moving_average_trait # トレイトありの移動平均計算のサンプル実行
+cargo run --release --bin use_trait_extension # トレイトによる機能拡張のサンプル実行
 ```
