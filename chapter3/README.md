@@ -15,4 +15,4 @@ pythonでもRustでもモジュール抽象化は簡単にできますので、�
 [RustのREADME](./rust/README.md)
 
 ## 記事
-まだ未公開です
+[なぜ「Rustは難しい言語」とされるのか――習得の難しさとその対策をWebエンジニアが考察](https://atmarkit.itmedia.co.jp/ait/articles/2201/26/news004.html)
