@@ -6,7 +6,9 @@ fn main() -> anyhow::Result<()> {
 }
 
 async fn run() -> anyhow::Result<()> {
+    // 本番データベースに接続するクライアントプールを作成
     let pool = create_pool(DB_STRING_PRODUCTION).await?;
+    // 本番データベースにiris_measurementsテーブルを作成
     let query_result = IrisMeasurement::create_table(&pool).await?;
     println!("{:?}", query_result);
     Ok(())

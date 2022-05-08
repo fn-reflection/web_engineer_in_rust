@@ -31,11 +31,11 @@ pub async fn create_pool(url: &str) -> Result<Pool<MySql>, sqlx::Error> {
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct IrisMeasurement {
     pub id: Option<u64>,
-    pub sepal_length: f64,
-    pub sepal_width: f64,
-    pub petal_length: f64,
-    pub petal_width: f64,
-    pub class: String,
+    pub sepal_length: f64, // がくの長さ
+    pub sepal_width: f64, // がくの幅
+    pub petal_length: f64, // 花弁の長さ
+    pub petal_width: f64, // 花弁の幅
+    pub class: String, // 分類名
 }
 
 impl IrisMeasurement {
@@ -47,22 +47,6 @@ impl IrisMeasurement {
     }
 
     pub async fn insert(self, pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
-        let sql = format!(
-            r#"INSERT INTO {} (sepal_length, sepal_width, petal_length, petal_width, class) VALUES (?, ?, ?, ?, ?)"#,
-            Self::TABLE_NAME
-        );
-        let result = sqlx::query(&sql)
-            .bind(self.sepal_length)
-            .bind(self.sepal_width)
-            .bind(self.petal_length)
-            .bind(self.petal_width)
-            .bind(self.class)
-            .execute(pool)
-            .await;
-        result
-    }
-
-    pub async fn from_mysql_row(self, pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
         let sql = format!(
             r#"INSERT INTO {} (sepal_length, sepal_width, petal_length, petal_width, class) VALUES (?, ?, ?, ?, ?)"#,
             Self::TABLE_NAME
