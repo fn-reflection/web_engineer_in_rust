@@ -106,6 +106,7 @@ mod tests {
         pool.execute(sql.as_str()).await
     }
 
+    // テスト用データ生成
     fn create_fake() -> IrisMeasurement {
         IrisMeasurement {
             id: None,
@@ -117,6 +118,7 @@ mod tests {
         }
     }
 
+    // テーブルの生成と初期化
     pub async fn setup_database(pool: &Pool<MySql>) {
         let _ = IrisMeasurement::create_table(pool).await.unwrap();
         let _ = truncate_table(pool, IrisMeasurement::TABLE_NAME)
@@ -126,10 +128,13 @@ mod tests {
 
     #[tokio::test]
     async fn create_and_select_ok() {
+        // テスト用のデータベースに接続
         let pool = create_pool(DB_STRING_TEST).await.unwrap();
+        // 前回のテスト実行による副作用を初期化
         let _ = setup_database(&pool).await;
         let measurement = create_fake();
         let insert_result = measurement.insert(&pool).await.unwrap();
+        // INSERT文によりデータが永続化されたか検証する
         assert_eq!(
             "MySqlQueryResult { rows_affected: 1, last_insert_id: 1 }",
             format!("{:?}", insert_result)
@@ -137,8 +142,10 @@ mod tests {
         let actual1 = IrisMeasurement::find_by_class(&pool, "Iris-virginica")
             .await
             .unwrap();
+        // 条件を満たす登録データが取得できたか検証する
         assert_eq!(actual1.len(), 1);
         let actual2 = IrisMeasurement::find_by_class(&pool, "abc").await.unwrap();
+        // 条件を満たす登録データは取得できないことを検証する
         assert_eq!(actual2.len(), 0);
     }
 }
