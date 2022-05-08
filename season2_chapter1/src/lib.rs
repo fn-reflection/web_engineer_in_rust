@@ -8,6 +8,11 @@ pub const DB_STRING_PRODUCTION: &'static str = "mysql://user:pass@localhost:5330
 // rust_web_containerからアクセスする場合は上記URIをコンテナが解決できないので下記の接続文字列にする
 // pub const DB_STRING_PRODUCTION: &'static str = "mysql://user:pass@mysql_container:3306/production";
 
+// テストDB(想定)のデータベース接続文字列
+pub const DB_STRING_TEST: &'static str = "mysql://user:pass@localhost:53306/test";
+// rust_web_containerからアクセスする場合は上記URIをコンテナが解決できないので下記の接続文字列にする
+// pub const DB_STRING_PRODUCTION: &'static str = "mysql://user:pass@mysql_container:3306/test";
+
 // 非同期処理を実行するランタイムを作成
 pub fn create_tokio_runtime() -> tokio::runtime::Runtime {
     tokio::runtime::Builder::new_multi_thread()
@@ -103,4 +108,53 @@ pub fn read_csv(relative_path: &str) -> anyhow::Result<Vec<IrisMeasurement>> {
         .filter_map(|row_result| row_result.ok())
         .collect::<Vec<_>>();
     Ok(nums)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    pub async fn truncate_table(
+        pool: &Pool<MySql>,
+        name: &str,
+    ) -> Result<MySqlQueryResult, sqlx::Error> {
+        let sql = format!("TRUNCATE TABLE {}", name);
+        pool.execute(sql.as_str()).await
+    }
+
+    fn create_fake() -> IrisMeasurement {
+        IrisMeasurement {
+            id: None,
+            sepal_length: 3.0,
+            sepal_width: 4.0,
+            petal_length: 5.0,
+            petal_width: 6.0,
+            class: "Iris-virginica".to_string(),
+        }
+    }
+
+    pub async fn setup_database(pool: &Pool<MySql>) {
+        let _ = IrisMeasurement::create_table(pool).await.unwrap();
+        let _ = truncate_table(pool, IrisMeasurement::TABLE_NAME)
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn create_and_select_ok() {
+        let pool = create_pool(DB_STRING_TEST).await.unwrap();
+        let _ = setup_database(&pool).await;
+        let measurement = create_fake();
+        let insert_result = measurement.insert(&pool).await.unwrap();
+        assert_eq!(
+            "MySqlQueryResult { rows_affected: 1, last_insert_id: 1 }",
+            format!("{:?}", insert_result)
+        );
+        let actual1 = IrisMeasurement::find_by_class(&pool, "Iris-virginica")
+            .await
+            .unwrap();
+        assert_eq!(actual1.len(), 1);
+        let actual2 = IrisMeasurement::find_by_class(&pool, "abc").await.unwrap();
+        assert_eq!(actual2.len(), 0);
+    }
 }

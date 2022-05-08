@@ -7,6 +7,7 @@ MySQLのdocker管理などを試していますが、環境依存性を完全に
 ```shell
 cargo run --bin init_db # DBのテーブル生成
 cargo run --bin web_engineer_in_rust # アヤメデータの読み書きプログラム実行
+cargo test # テストの実行
 ```
 ## dockerコンテナ起動
 ```shell

@@ -11,3 +11,4 @@ async fn run() -> anyhow::Result<()> {
     println!("{:?}", query_result);
     Ok(())
 }
+
