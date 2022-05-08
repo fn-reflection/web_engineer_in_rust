@@ -4,7 +4,6 @@ services:
     build: 
       dockerfile: docker/rust/Dockerfile
     container_name: rust_web_container
-    tty: true
   mysql_container:
     container_name: mysql_container
     build: 
@@ -16,9 +15,8 @@ services:
       MYSQL_USER: user
       MYSQL_PASSWORD: pass
     ports:
-      - "53306:3306"
+      - "3306:3306"
     volumes:
       - mysql_volume:/var/lib/mysql
-    tty: true
 volumes:
   mysql_volume:
