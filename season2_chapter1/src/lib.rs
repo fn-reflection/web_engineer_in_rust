@@ -5,6 +5,8 @@ use sqlx::{
 
 // 本番DB(想定)のデータベース接続文字列
 pub const DB_STRING_PRODUCTION: &'static str = "mysql://user:pass@localhost:53306/production";
+// rust_web_containerからアクセスする場合は上記URIをコンテナが解決できないので下記の接続文字列にする
+// pub const DB_STRING_PRODUCTION: &'static str = "mysql://user:pass@mysql_container:3306/production";
 
 // 非同期処理を実行するランタイムを作成
 pub fn create_tokio_runtime() -> tokio::runtime::Runtime {
