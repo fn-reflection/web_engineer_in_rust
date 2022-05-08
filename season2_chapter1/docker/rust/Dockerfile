@@ -1,2 +1,3 @@
 FROM rust:1.60.0
-COPY . .
+COPY . /workdir
+WORKDIR /workdir

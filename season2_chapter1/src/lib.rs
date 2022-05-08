@@ -4,7 +4,7 @@ use sqlx::{
 };
 
 // 本番DB(想定)のデータベース接続文字列
-pub const DB_STRING_PRODUCTION: &'static str = "mysql://user:pass@localhost/production";
+pub const DB_STRING_PRODUCTION: &'static str = "mysql://user:pass@localhost:53306/production";
 
 // 非同期処理を実行するランタイムを作成
 pub fn create_tokio_runtime() -> tokio::runtime::Runtime {
@@ -35,7 +35,7 @@ impl IrisMeasurement {
     const TABLE_NAME: &'static str = "iris_measurements";
 
     pub async fn create_table(pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
-        pool.execute(include_str!("../sql/ddl/iris_measurement_create.sql"))
+        pool.execute(include_str!("../sql/ddl/iris_measurements_create.sql"))
             .await
     }
 
