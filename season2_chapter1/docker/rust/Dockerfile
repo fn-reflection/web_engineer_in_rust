@@ -1,2 +1,2 @@
-FROM rust:1.58.0
+FROM rust:1.60.0
 COPY . .

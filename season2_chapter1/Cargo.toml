@@ -1,7 +1,17 @@
 [package]
 authors = ["Naoki Fujita <fujitanaoki0718@gmail.com>"]
 edition = "2021"
-name = "web_engineer_in_rust_season2_chapter1"
+name = "web_engineer_in_rust"
 version = "0.1.0"
 
 [dependencies]
+anyhow = "1.0.56"
+csv = "1.1.6"
+futures = "0.3.21"
+serde = "1.0.136"
+sqlx = {version = "0.5.11", features = ["runtime-tokio-native-tls", "mysql", "chrono", "json"]}
+tokio = {version = "1.17.0", features = ["full"]}
+
+[[bin]]
+name = "init_db"
+path = "src/init_db.rs"
