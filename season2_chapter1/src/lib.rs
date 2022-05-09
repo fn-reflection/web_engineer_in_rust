@@ -62,7 +62,7 @@ impl IrisMeasurement {
         result
     }
 
-    // アヤメの種類を指定し全件取得する
+    // アヤメの種類を指定しリストを取得
     pub async fn find_by_class(
         pool: &Pool<MySql>,
         class: &str,
