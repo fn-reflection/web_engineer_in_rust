@@ -1,0 +1,23 @@
+version: "3.8"
+services:
+  rust_web_container:
+    build: 
+      dockerfile: docker/rust/Dockerfile
+    container_name: rust_web_container
+    tty: true
+  mysql_container:
+    container_name: mysql_container
+    build: 
+      dockerfile: ./docker/mysql/Dockerfile
+      args:
+        - MYSQL_VERSION=8.0.29
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+    ports:
+      - "53306:3306"
+    volumes:
+      - mysql_volume:/var/lib/mysql
+volumes:
+  mysql_volume:
