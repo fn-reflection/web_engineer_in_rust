@@ -5,14 +5,15 @@ name = "web_engineer_in_rust"
 version = "0.1.0"
 
 [dependencies]
-anyhow = "1.0.56"
+anyhow = "1.0.58"
 async-session = "3.0.0"
 async-sqlx-session = {version = "0.4.0", features = ["mysql"]}
-axum = {version = "0.4.8", features = ["headers", "http2", "ws", "tower-log"]}
-axum-macros = "0.1.2"
+axum = {version = "0.5.13", features = ["headers", "http2", "ws", "tower-log"]}
+axum-extra = {version = "0.3.6", features = ["cookie"]}
+axum-macros = "0.2.3"
 futures = "0.3.21"
-serde = "1.0.136"
-serde_json = "1.0.79"
+serde = "1.0.140"
+serde_json = "1.0.82"
 sqlx = {version = "0.5.11", features = ["mysql", "chrono", "json"]}
 tokio = {version = "1.17.0", features = ["full"]}
 

@@ -19,7 +19,7 @@ docker compose up -d # MySQLコンテナとRustコンテナが立ち上がる
 ## APIサーバの動作検証に有用なコマンド
 ```shell
 curl -X POST -H "Content-Type: application/json" -d '{"name":"abcdeff"}' http://localhost:8888/users
-curl -X POST -H "Content-Type: application/json" -d '{"name":"abcdeffgg"}' http://localhost:8888/sessions
+curl -v -X POST -H "Content-Type: application/json" -d '{"name":"abcdeffgg"}' http://localhost:8888/sessions
 ```
 
 

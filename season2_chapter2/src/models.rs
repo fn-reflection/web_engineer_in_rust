@@ -39,10 +39,16 @@ impl User {
             .await
     }
 
-    pub async fn find_by_name(
-        name: &str,
-        pool: &Pool<MySql>,
-    ) -> Result<Option<User>, sqlx::Error> {
+    pub async fn find_by_id(id: u64, pool: &Pool<MySql>) -> Result<Option<User>, sqlx::Error> {
+        let sql = format!(r#"SELECT * FROM {} WHERE id = ?;"#, Self::TABLE_NAME);
+        let result = sqlx::query_as::<_, User>(&sql)
+            .bind(id)
+            .fetch_optional(pool)
+            .await;
+        result
+    }
+
+    pub async fn find_by_name(name: &str, pool: &Pool<MySql>) -> Result<Option<User>, sqlx::Error> {
         let sql = format!(r#"SELECT * FROM {} WHERE name = ?;"#, Self::TABLE_NAME);
         let result = sqlx::query_as::<_, User>(&sql)
             .bind(name)
@@ -82,15 +88,38 @@ impl UserTweet {
             .await;
         result
     }
+
+    pub async fn find_by_follower_id(
+        follower_id: u64,
+        pool: &Pool<MySql>,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let followee_ids = FollowRelation::find_by_follower_id(follower_id, &pool)
+            .await?
+            .into_iter()
+            .map(|r| r.followee_id)
+            .collect::<Vec<_>>();
+        let placeholders = format!("?{}", ",?".repeat(followee_ids.len() - 1));
+        let sql = format!(
+            r#"SELECT * FROM {} WHERE user_id IN ({});"#,
+            Self::TABLE_NAME,
+            placeholders
+        );
+        let mut query = sqlx::query_as::<_, Self>(&sql);
+        for id in followee_ids {
+            query = query.bind(id);
+        }
+        let result = query.fetch_all(pool).await;
+        result
+    }
 }
 
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
-pub struct FollowRelations {
+pub struct FollowRelation {
     pub id: Option<u64>,
     pub followee_id: u64, // フォローされる側のユーザID
     pub follower_id: u64, // フォローする側のユーザID
 }
-impl FollowRelations {
+impl FollowRelation {
     pub const TABLE_NAME: &'static str = "follow_relations";
     pub async fn create_table(pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
         pool.execute(include_str!("../sql/ddl/follow_relations_create.sql"))
@@ -105,6 +134,21 @@ impl FollowRelations {
             .bind(&self.followee_id)
             .bind(&self.follower_id)
             .execute(pool)
+            .await;
+        result
+    }
+
+    pub async fn find_by_follower_id(
+        follower_id: u64,
+        pool: &Pool<MySql>,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let sql = format!(
+            r#"SELECT * FROM {} WHERE follower_id = ?;"#,
+            Self::TABLE_NAME
+        );
+        let result = sqlx::query_as::<_, Self>(&sql)
+            .bind(follower_id)
+            .fetch_all(pool)
             .await;
         result
     }
@@ -129,5 +173,5 @@ pub fn panic_except_duplicate_key(result: Result<MySqlQueryResult, sqlx::Error>)
 pub async fn setup_tables(pool: &Pool<MySql>) {
     panic_except_duplicate_key(User::create_table(&pool).await);
     panic_except_duplicate_key(UserTweet::create_table(&pool).await);
-    panic_except_duplicate_key(FollowRelations::create_table(&pool).await);
+    panic_except_duplicate_key(FollowRelation::create_table(&pool).await);
 }

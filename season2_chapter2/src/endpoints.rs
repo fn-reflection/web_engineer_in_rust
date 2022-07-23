@@ -1,15 +1,16 @@
-use crate::models::{FollowRelations, User, UserTweet};
+use crate::models::{FollowRelation, User, UserTweet};
 use async_session::{Session, SessionStore as _};
 use async_sqlx_session::MySqlSessionStore;
 use axum::{
-    extract::{Extension, FromRequest, Json, RequestParts, TypedHeader},
-    headers::Cookie,
+    extract::{Extension, FromRequest, Json, RequestParts},
     http::{header::HeaderValue, StatusCode},
     response::IntoResponse,
     routing::{get, post},
     Router,
 };
+use axum_extra::extract::cookie::{Cookie, CookieJar};
 use sqlx::{MySql, Pool};
+use std::sync::Arc;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct CreateUserParams {
@@ -19,85 +20,146 @@ pub struct CreateUserParams {
 #[axum_macros::debug_handler]
 pub(crate) async fn create_user(
     Json(payload): Json<CreateUserParams>,
-    pool: Extension<Pool<MySql>>,
+    arc_pool: Extension<Arc<Pool<MySql>>>,
 ) -> impl IntoResponse {
     let user = User {
         id: None,
         name: payload.name,
     };
-    match user.insert(&pool).await {
-        Ok(res) => (
-            StatusCode::OK,
-            serde_json::to_string(&serde_json::json!({"messages": ["ユーザ作成成功"]})).unwrap(),
-        ),
-        Err(e) => (
-            StatusCode::BAD_REQUEST,
-            serde_json::to_string(&serde_json::json!({"errors": ["名前が重複しています"]}))
-                .unwrap(),
-        ),
+    match user.insert(&arc_pool).await {
+        Ok(_res) => StatusCode::CREATED,
+        Err(_e) => StatusCode::BAD_REQUEST,
     }
 }
 
 #[derive(Debug, serde::Deserialize)]
-pub struct LoginParams {
+pub struct CreateSessionParams {
     pub name: String,
 }
 
 #[axum_macros::debug_handler]
-pub(crate) async fn login(
-    Json(payload): Json<LoginParams>,
-    pool: Extension<Pool<MySql>>,
+pub(crate) async fn create_session(
+    Json(payload): Json<CreateSessionParams>,
+    arc_pool: Extension<Arc<Pool<MySql>>>,
+    session_store: Extension<MySqlSessionStore>,
+    cookie_jar: CookieJar,
 ) -> impl IntoResponse {
-    dbg!(&User::find_by_name(&payload.name, &pool).await);
-    match User::find_by_name(&payload.name, &pool).await {
-        Ok(user) => {
-            (match user {
-                Some(user) => (
-                    StatusCode::OK,
-                    serde_json::to_string(&serde_json::json!({"messages": ["ログイン成功"]}))
-                        .unwrap(),
-                ),
-                None => (
-                    StatusCode::OK,
-                    serde_json::to_string(&serde_json::json!({"errors": ["ユーザが存在しません"]}))
-                        .unwrap(),
-                ),
-            })
+    match User::find_by_name(&payload.name, &arc_pool).await {
+        Ok(user) => match user {
+            Some(user) => {
+                let mut session = Session::new();
+                session.expire_in(std::time::Duration::from_secs(86400));
+                session.insert("user_id", user.id).unwrap();
+                let session_id = session.id().to_string();
+                match session_store.store_session(session).await {
+                    Ok(_) => Ok((
+                        StatusCode::CREATED,
+                        cookie_jar.add(Cookie::new(AXUM_SESSION_COOKIE_KEY, session_id)),
+                    )),
+                    Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
+                }
+            }
+            None => Err(StatusCode::BAD_REQUEST),
+        },
+        Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
+    }
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct CreateUserTweetParams {
+    pub content: String,
+}
+
+#[axum_macros::debug_handler]
+pub(crate) async fn create_user_tweet(
+    Json(payload): Json<CreateUserTweetParams>,
+    arc_pool: Extension<Arc<Pool<MySql>>>,
+    session: CurrentSession,
+) -> impl IntoResponse {
+    let user_id = session.0.get::<u64>("user_id");
+    match user_id {
+        Some(user_id) => {
+            let tweet = UserTweet {
+                id: None,
+                user_id,
+                content: payload.content,
+            };
+            match tweet.insert(&arc_pool).await {
+                Ok(_) => Ok(StatusCode::CREATED),
+                Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
+            }
         }
-        Err(e) => (
-            StatusCode::SERVICE_UNAVAILABLE,
-            serde_json::to_string(&serde_json::json!({"errors": ["サーバーエラー発生"]})).unwrap(),
-        ),
+        None => Err(StatusCode::UNAUTHORIZED),
+    }
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct CreateFollowRelationParams {
+    pub followee_id: u64,
+}
+
+#[axum_macros::debug_handler]
+pub(crate) async fn create_follow_relation(
+    Json(payload): Json<CreateFollowRelationParams>,
+    arc_pool: Extension<Arc<Pool<MySql>>>,
+    session: CurrentSession,
+) -> impl IntoResponse {
+    let user_id = session.0.get::<u64>("user_id");
+    match user_id {
+        Some(user_id) => {
+            let result = User::find_by_id(payload.followee_id, &arc_pool).await;
+            match result {
+                Ok(user) => match user {
+                    Some(_) => {
+                        let follow_relation = FollowRelation {
+                            id: None,
+                            followee_id: payload.followee_id,
+                            follower_id: user_id,
+                        };
+                        match follow_relation.insert(&arc_pool).await {
+                            Ok(_) => Ok(StatusCode::CREATED),
+                            Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
+                        }
+                    }
+                    None => Err(StatusCode::BAD_REQUEST),
+                },
+                Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
+            }
+        }
+        None => Err(StatusCode::UNAUTHORIZED),
     }
 }
 
 #[axum_macros::debug_handler]
-pub(crate) async fn create_tweet(Json(_payload): Json<serde_json::Value>) -> impl IntoResponse {}
-
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct Health {
-    health: String,
-}
-
-#[axum_macros::debug_handler]
-pub(crate) async fn get_timeline() -> impl IntoResponse {
-    let health = Health {
-        health: "healthy".to_string(),
-    };
-    (StatusCode::OK, axum::Json(health))
+pub(crate) async fn get_timeline(
+    arc_pool: Extension<Arc<Pool<MySql>>>,
+    session: CurrentSession,
+) -> impl IntoResponse {
+    let user_id = session.0.get::<u64>("user_id");
+    match user_id {
+        Some(user_id) => {
+            let tweets = UserTweet::find_by_follower_id(user_id, &arc_pool).await;
+            match tweets {
+                Ok(tweets) => Ok(axum::Json(tweets)),
+                Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
+            }
+        }
+        None => Err(StatusCode::UNAUTHORIZED),
+    }
 }
 
 pub async fn run_server(
-    pool: Pool<MySql>,
-    session_store: async_sqlx_session::MySqlSessionStore,
+    arc_pool: Arc<Pool<MySql>>,
+    session_store: MySqlSessionStore,
 ) -> anyhow::Result<()> {
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8888));
     let app = Router::new()
         .route("/users", post(create_user))
-        .route("/tweets", post(create_tweet))
-        .route("/sessions", post(login))
+        .route("/sessions", post(create_session))
+        .route("/user_tweets", post(create_user_tweet))
+        .route("/follow_relations", post(create_follow_relation))
         .route("/pages/timeline", get(get_timeline))
-        .layer(Extension(pool))
+        .layer(Extension(arc_pool))
         .layer(Extension(session_store));
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
@@ -105,116 +167,38 @@ pub async fn run_server(
     Ok(())
 }
 
-struct FreshUserId {
+#[derive(Clone)]
+pub struct FreshUserId {
     pub user_id: u64,
     pub cookie: HeaderValue,
 }
 
-enum UserIdFromSession {
-    FoundUserId(u64),
-    CreatedFreshUserId(FreshUserId),
-}
-
-const AXUM_SESSION_COOKIE_NAME: &str = "axum_session";
-
-// https://github.com/tokio-rs/axum/blob/main/examples/sessions/src/main.rs#L84より
+pub struct CurrentSession(Session);
+const AXUM_SESSION_COOKIE_KEY: &str = "axum_session";
+// https://github.com/tokio-rs/axum/blob/main/examples/sessions/src/main.rsを改変
 #[axum::async_trait]
-impl<B> FromRequest<B> for UserIdFromSession
+impl<B> FromRequest<B> for CurrentSession
 where
     B: Send,
 {
-    type Rejection = (StatusCode, &'static str);
+    type Rejection = StatusCode;
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         let Extension(store) = Extension::<MySqlSessionStore>::from_request(req)
             .await
             .unwrap();
-
-        let cookie = Option::<TypedHeader<Cookie>>::from_request(req)
-            .await
-            .unwrap();
-
-        let session_cookie = cookie
-            .as_ref()
-            .and_then(|cookie| cookie.get(AXUM_SESSION_COOKIE_NAME));
-
-        // return the new created session cookie for client
-        if session_cookie.is_none() {
-            let user_id = 1;
-            let mut session = Session::new();
-            session.insert("user_id", user_id).unwrap();
-            let cookie = store.store_session(session).await.unwrap().unwrap();
-            return Ok(Self::CreatedFreshUserId(FreshUserId {
-                user_id,
-                cookie: HeaderValue::from_str(
-                    format!("{}={}", AXUM_SESSION_COOKIE_NAME, cookie).as_str(),
-                )
-                .unwrap(),
-            }));
+        let cookie = CookieJar::from_request(req).await.unwrap();
+        let session_id = cookie
+            .get(AXUM_SESSION_COOKIE_KEY)
+            .map(|cookie| cookie.value())
+            .unwrap_or("")
+            .to_string();
+        let session_data = store.load_session(session_id).await;
+        match session_data {
+            Ok(session_data) => match session_data {
+                Some(session_data) => Ok(CurrentSession(session_data)),
+                None => Err(StatusCode::UNAUTHORIZED),
+            },
+            Err(_) => Err(StatusCode::UNAUTHORIZED),
         }
-        let user_id = if let Some(session) = store
-            .load_session(session_cookie.unwrap().to_owned())
-            .await
-            .unwrap()
-        {
-            if let Some(user_id) = session.get::<u64>("user_id") {
-                user_id
-            } else {
-                return Err((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "No `user_id` found in session",
-                ));
-            }
-        } else {
-            return Err((StatusCode::BAD_REQUEST, "No session found for cookie"));
-        };
-
-        Ok(Self::FoundUserId(user_id))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::models::{
-        create_pool, setup_tables, FollowRelations, User, UserTweet, DB_STRING_TEST,
-    };
-    use sqlx::{mysql::MySqlQueryResult, Executor as _, MySql, Pool};
-
-    pub async fn truncate_table(
-        pool: &Pool<MySql>,
-        name: &str,
-    ) -> Result<MySqlQueryResult, sqlx::Error> {
-        let sql = format!(
-            "SET foreign_key_checks = 0; TRUNCATE TABLE {}; SET foreign_key_checks = 1;",
-            name
-        );
-        pool.execute(sql.as_str()).await
-    }
-
-    // テーブルの生成と初期化
-    pub async fn setup_test_database() {
-        let pool = crate::models::create_pool(DB_STRING_TEST).await.unwrap();
-        crate::models::setup_tables(&pool).await;
-        let _ = truncate_table(&pool, FollowRelations::TABLE_NAME)
-            .await
-            .unwrap();
-        let _ = truncate_table(&pool, UserTweet::TABLE_NAME).await.unwrap();
-        let _ = truncate_table(&pool, User::TABLE_NAME).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn health_ok() {
-        setup_test_database().await;
-        let pool = create_pool(DB_STRING_TEST).await.unwrap();
-        let session_store = MySqlSessionStore::new(DB_STRING_TEST).await.unwrap();
-        tokio::spawn(run_server(pool, session_store));
-
-        let client = reqwest::Client::new();
-        let response = client
-            .get("http://10.10.10.11:8888/pages/timeline")
-            .send()
-            .await
-            .unwrap();
-        dbg!(&response);
     }
 }
