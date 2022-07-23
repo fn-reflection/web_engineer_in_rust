@@ -8,7 +8,7 @@ localhostのTCP53306ポートでMySQLサーバが立ち上がっていると仮�
 ## Rustの実行コマンド
 ```shell
 cargo run --bin init_db # DBのテーブル生成
-cargo run --bin web_engineer_in_rust # アヤメデータの読み書きプログラム実行
+cargo run --bin web_engineer_in_rust # 
 cargo test -- --test-threads=1 # テストの実行
 ```
 ## dockerコンテナ起動

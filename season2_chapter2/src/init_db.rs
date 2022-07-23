@@ -1,5 +1,7 @@
 // src/init_db.rs
-use web_engineer_in_rust::{create_pool, create_tokio_runtime, IrisMeasurement, DB_STRING_PRODUCTION};
+use web_engineer_in_rust::models::{
+    create_pool, create_tokio_runtime, setup_tables, DB_STRING_PRODUCTION,
+};
 
 fn main() -> anyhow::Result<()> {
     let tokio_rt = create_tokio_runtime();
@@ -9,9 +11,10 @@ fn main() -> anyhow::Result<()> {
 async fn run() -> anyhow::Result<()> {
     // 本番データベースに接続するクライアントプールを作成
     let pool = create_pool(DB_STRING_PRODUCTION).await?;
+    let session_store = async_sqlx_session::MySqlSessionStore::new(DB_STRING_PRODUCTION).await?;
+    session_store.migrate().await?;
+
     // 本番データベースにiris_measurementsテーブルを作成
-    let query_result = IrisMeasurement::create_table(&pool).await?;
-    println!("{:?}", query_result);
+    setup_tables(&pool).await;
     Ok(())
 }
-

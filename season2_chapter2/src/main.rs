@@ -1,7 +1,6 @@
 // src/main.rs
-use web_engineer_in_rust::{
-    create_pool, create_tokio_runtime, read_csv, IrisMeasurement, DB_STRING_PRODUCTION,
-};
+use web_engineer_in_rust::endpoints::run_server;
+use web_engineer_in_rust::models::{create_pool, create_tokio_runtime, DB_STRING_PRODUCTION};
 
 fn main() -> anyhow::Result<()> {
     // 非同期ランタイムを生成
@@ -10,15 +9,8 @@ fn main() -> anyhow::Result<()> {
 }
 
 async fn run() -> anyhow::Result<()> {
-    // csvからデータセットをメモリにロード
-    let measurements = read_csv("data/iris.csv")?;
     let pool = create_pool(DB_STRING_PRODUCTION).await?;
-    // 一件ずつデータベースにINSERT
-    for m in measurements {
-        m.insert(&pool).await?;
-    }
-    // Iris-versicolorのデータを取得する
-    let rows = IrisMeasurement::find_by_class(&pool, "Iris-versicolor").await?;
-    println!("{:?}", rows);
-    Ok(())
+    let session_store = async_sqlx_session::MySqlSessionStore::new(DB_STRING_PRODUCTION).await?;
+    session_store.spawn_cleanup_task(Duration::from_secs(60 * 60));
+    run_server(pool, session_store).await
 }
