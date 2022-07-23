@@ -100,7 +100,7 @@ impl UserTweet {
             .collect::<Vec<_>>();
         let placeholders = format!("?{}", ",?".repeat(followee_ids.len() - 1));
         let sql = format!(
-            r#"SELECT * FROM {} WHERE user_id IN ({});"#,
+            r#"SELECT * FROM {} WHERE user_id IN ({}) ORDER BY id DESC;"#,
             Self::TABLE_NAME,
             placeholders
         );

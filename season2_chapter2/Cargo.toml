@@ -14,7 +14,7 @@ axum-macros = "0.2.3"
 futures = "0.3.21"
 serde = "1.0.140"
 serde_json = "1.0.82"
-sqlx = {version = "0.5.11", features = ["mysql", "chrono", "json"]}
+sqlx = {version = "0.6.0", features = ["runtime-tokio-native-tls", "mysql", "chrono", "json"]}
 tokio = {version = "1.17.0", features = ["full"]}
 
 [dev-dependencies]
