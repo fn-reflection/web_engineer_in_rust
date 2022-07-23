@@ -11,6 +11,5 @@ fn main() -> anyhow::Result<()> {
 async fn run() -> anyhow::Result<()> {
     let pool = create_pool(DB_STRING_PRODUCTION).await?;
     let session_store = async_sqlx_session::MySqlSessionStore::new(DB_STRING_PRODUCTION).await?;
-    session_store.spawn_cleanup_task(Duration::from_secs(60 * 60));
     run_server(pool, session_store).await
 }

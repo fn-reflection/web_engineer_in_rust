@@ -33,15 +33,27 @@ pub struct User {
     pub name: String, // ユーザー名
 }
 impl User {
-    const TABLE_NAME: &'static str = "users";
+    pub const TABLE_NAME: &'static str = "users";
     pub async fn create_table(pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
         pool.execute(include_str!("../sql/ddl/users_create.sql"))
             .await
     }
 
-    pub async fn insert(self, pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
-        let sql = format!(r#"INSERT INTO {} (name) VALUES (?)"#, Self::TABLE_NAME);
-        let result = sqlx::query(&sql).bind(self.name).execute(pool).await;
+    pub async fn find_by_name(
+        name: &str,
+        pool: &Pool<MySql>,
+    ) -> Result<Option<User>, sqlx::Error> {
+        let sql = format!(r#"SELECT * FROM {} WHERE name = ?;"#, Self::TABLE_NAME);
+        let result = sqlx::query_as::<_, User>(&sql)
+            .bind(name)
+            .fetch_optional(pool)
+            .await;
+        result
+    }
+
+    pub async fn insert(&self, pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
+        let sql = format!(r#"INSERT INTO {} (name) VALUES (?);"#, Self::TABLE_NAME);
+        let result = sqlx::query(&sql).bind(&self.name).execute(pool).await;
         result
     }
 }
@@ -53,19 +65,19 @@ pub struct UserTweet {
     pub content: String,
 }
 impl UserTweet {
-    const TABLE_NAME: &'static str = "user_tweets";
+    pub const TABLE_NAME: &'static str = "user_tweets";
     pub async fn create_table(pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
         pool.execute(include_str!("../sql/ddl/user_tweets_create.sql"))
             .await
     }
-    pub async fn insert(self, pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
+    pub async fn insert(&self, pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
         let sql = format!(
-            r#"INSERT INTO {} (user_id, content) VALUES (?, ?)"#,
+            r#"INSERT INTO {} (user_id, content) VALUES (?, ?);"#,
             Self::TABLE_NAME
         );
         let result = sqlx::query(&sql)
-            .bind(self.user_id)
-            .bind(self.content)
+            .bind(&self.user_id)
+            .bind(&self.content)
             .execute(pool)
             .await;
         result
@@ -79,19 +91,19 @@ pub struct FollowRelations {
     pub follower_id: u64, // フォローする側のユーザID
 }
 impl FollowRelations {
-    const TABLE_NAME: &'static str = "follow_relations";
+    pub const TABLE_NAME: &'static str = "follow_relations";
     pub async fn create_table(pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
         pool.execute(include_str!("../sql/ddl/follow_relations_create.sql"))
             .await
     }
-    pub async fn insert(self, pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
+    pub async fn insert(&self, pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
         let sql = format!(
-            r#"INSERT INTO {} (followee_id, follower_id) VALUES (?, ?)"#,
+            r#"INSERT INTO {} (followee_id, follower_id) VALUES (?, ?);"#,
             Self::TABLE_NAME
         );
         let result = sqlx::query(&sql)
-            .bind(self.followee_id)
-            .bind(self.follower_id)
+            .bind(&self.followee_id)
+            .bind(&self.follower_id)
             .execute(pool)
             .await;
         result
@@ -110,7 +122,6 @@ pub fn panic_except_duplicate_key(result: Result<MySqlQueryResult, sqlx::Error>)
             panic!("{}", e);
         }
     };
-    
 }
 
 // テーブルを生成する
@@ -119,28 +130,4 @@ pub async fn setup_tables(pool: &Pool<MySql>) {
     panic_except_duplicate_key(User::create_table(&pool).await);
     panic_except_duplicate_key(UserTweet::create_table(&pool).await);
     panic_except_duplicate_key(FollowRelations::create_table(&pool).await);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    pub async fn truncate_table(
-        pool: &Pool<MySql>,
-        name: &str,
-    ) -> Result<MySqlQueryResult, sqlx::Error> {
-        let sql = format!("TRUNCATE TABLE {}", name);
-        pool.execute(sql.as_str()).await
-    }
-
-    // テーブルの生成と初期化
-    pub async fn setup_test_database() {
-        let pool = create_pool(DB_STRING_TEST).await.unwrap();
-        setup_tables(&pool);
-        let _ = truncate_table(&pool, User::TABLE_NAME).await.unwrap();
-        let _ = truncate_table(&pool, UserTweet::TABLE_NAME).await.unwrap();
-        let _ = truncate_table(&pool, FollowRelations::TABLE_NAME)
-            .await
-            .unwrap();
-    }
 }
