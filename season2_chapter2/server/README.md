@@ -1,7 +1,7 @@
 ## Rustの実行コマンド
 ```shell
 cargo run --bin init_db # DBのテーブル生成
-cargo run --bin web_engineer_in_rust # 
+cargo run --bin ruitter # ruitter APIサーバの起動
 cargo test -- --test-threads=1 # テストの実行
 ```
 
@@ -17,5 +17,5 @@ curl -v -X POST -H "Content-Type: application/json" -d '{"name":"abcdeffgg"}' ht
 # ソースコードのDB_STRING_PRODUCTIONをコメントアウトされているものに書き換える
 docker compose run --rm rust_web_container /bin/bash # コンテナ内部でbash起動
 cargo run --bin init_db # DBのテーブル生成
-cargo run --bin web_engineer_in_rust # アヤメデータの読み書きプログラム実行
+cargo run --bin ruitter # アヤメデータの読み書きプログラム実行
 ```

@@ -76,11 +76,7 @@ pub(crate) async fn create_user_tweet(
     arc_pool: Extension<Arc<Pool<MySql>>>,
     session: CurrentSession,
 ) -> impl IntoResponse {
-    let user_id = session.0.get::<u64>("user_id");
-    dbg!(&user_id);
-    dbg!(&payload.content);
-    dbg!(&session.0);
-    match user_id {
+    match session.0.get::<u64>("user_id") {
         Some(user_id) => {
             let tweet = UserTweet {
                 id: None,
@@ -107,8 +103,7 @@ pub(crate) async fn create_follow_relation(
     arc_pool: Extension<Arc<Pool<MySql>>>,
     session: CurrentSession,
 ) -> impl IntoResponse {
-    let user_id = session.0.get::<u64>("user_id");
-    match user_id {
+    match session.0.get::<u64>("user_id") {
         Some(user_id) => {
             let result = User::find_by_name(&payload.name, &arc_pool).await;
             match result {
@@ -137,15 +132,11 @@ pub(crate) async fn get_timeline(
     arc_pool: Extension<Arc<Pool<MySql>>>,
     session: CurrentSession,
 ) -> impl IntoResponse {
-    let user_id = session.0.get::<u64>("user_id");
-    match user_id {
-        Some(user_id) => {
-            let tweets = timeline(user_id, &arc_pool).await;
-            match tweets {
-                Ok(tweets) => Ok(axum::Json(tweets)),
-                Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
-            }
-        }
+    match session.0.get::<u64>("user_id") {
+        Some(user_id) => match timeline(user_id, &arc_pool).await {
+            Ok(tweets) => Ok(axum::Json(tweets)),
+            Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
+        },
         None => Err(StatusCode::UNAUTHORIZED),
     }
 }
@@ -194,9 +185,7 @@ where
             .map(|cookie| cookie.value())
             .unwrap_or("")
             .to_string();
-        dbg!(&session_id);
         let session_data = store.load_session(session_id).await;
-        dbg!(&session_data);
         match session_data {
             Ok(session_data) => match session_data {
                 Some(session_data) => Ok(CurrentSession(session_data)),

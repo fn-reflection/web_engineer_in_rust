@@ -1,7 +1,5 @@
 // src/init_db.rs
-use web_engineer_in_rust::models::{
-    create_pool, create_tokio_runtime, setup_tables, DB_STRING_PRODUCTION,
-};
+use ruitter::models::{create_pool, create_tokio_runtime, setup_tables, DB_STRING_PRODUCTION};
 
 fn main() -> anyhow::Result<()> {
     let tokio_rt = create_tokio_runtime();

@@ -1,7 +1,7 @@
 // src/main.rs
 use std::sync::Arc;
-use web_engineer_in_rust::endpoints::run_server;
-use web_engineer_in_rust::models::{create_pool, create_tokio_runtime, DB_STRING_PRODUCTION};
+use ruitter::endpoints::run_server;
+use ruitter::models::{create_pool, create_tokio_runtime, DB_STRING_PRODUCTION};
 
 fn main() -> anyhow::Result<()> {
     // 非同期ランタイムを生成
