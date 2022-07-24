@@ -1,0 +1,63 @@
+.error {
+  background-color: #fbb;
+}
+.success {
+  background-color: #bfb;
+}
+
+.header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  background-color: #eee;
+  gap: 0.5rem;
+}
+
+.panes {
+  display: flex;
+  flex: 1 1 0;
+  gap: 2rem;
+}
+
+.select {
+  height: 2rem;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+
+  & > :nth-child(2n) {
+  }
+}
+
+.source {
+  width: 50%;
+  white-space: pre;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  & > * {
+    overflow-wrap: anywhere;
+  }
+
+  &:hover > * {
+    background-color: #ffd;
+  }
+}
+
+.row-path {
+  width: 100%;
+}
+
+.row-number {
+  min-width: 5rem;
+  text-align: right;
+}

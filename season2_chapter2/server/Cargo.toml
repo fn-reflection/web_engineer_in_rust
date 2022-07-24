@@ -1,7 +1,7 @@
 [package]
 authors = ["Naoki Fujita <fujitanaoki0718@gmail.com>"]
 edition = "2021"
-name = "web_engineer_in_rust"
+name = "ruitter"
 version = "0.1.0"
 
 [dependencies]

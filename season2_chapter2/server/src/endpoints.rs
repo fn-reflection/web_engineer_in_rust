@@ -1,4 +1,4 @@
-use crate::models::{FollowRelation, User, UserTweet};
+use crate::models::{timeline, FollowRelation, User, UserTweet};
 use async_session::{Session, SessionStore as _};
 use async_sqlx_session::MySqlSessionStore;
 use axum::{
@@ -12,12 +12,12 @@ use axum_extra::extract::cookie::{Cookie, CookieJar};
 use sqlx::{MySql, Pool};
 use std::sync::Arc;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(serde::Deserialize)]
 pub struct CreateUserParams {
     pub name: String,
 }
 
-#[axum_macros::debug_handler]
+// ユーザ新規作成API
 pub(crate) async fn create_user(
     Json(payload): Json<CreateUserParams>,
     arc_pool: Extension<Arc<Pool<MySql>>>,
@@ -32,12 +32,12 @@ pub(crate) async fn create_user(
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+// ログインAPI
+#[derive(serde::Deserialize)]
 pub struct CreateSessionParams {
     pub name: String,
 }
 
-#[axum_macros::debug_handler]
 pub(crate) async fn create_session(
     Json(payload): Json<CreateSessionParams>,
     arc_pool: Extension<Arc<Pool<MySql>>>,
@@ -50,11 +50,10 @@ pub(crate) async fn create_session(
                 let mut session = Session::new();
                 session.expire_in(std::time::Duration::from_secs(86400));
                 session.insert("user_id", user.id).unwrap();
-                let session_id = session.id().to_string();
                 match session_store.store_session(session).await {
-                    Ok(_) => Ok((
+                    Ok(cookie_value) => Ok((
                         StatusCode::CREATED,
-                        cookie_jar.add(Cookie::new(AXUM_SESSION_COOKIE_KEY, session_id)),
+                        cookie_jar.add(Cookie::new(AXUM_SESSION_COOKIE_KEY, cookie_value.unwrap())),
                     )),
                     Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
                 }
@@ -65,11 +64,12 @@ pub(crate) async fn create_session(
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(serde::Deserialize)]
 pub struct CreateUserTweetParams {
     pub content: String,
 }
 
+// ツイート作成API
 #[axum_macros::debug_handler]
 pub(crate) async fn create_user_tweet(
     Json(payload): Json<CreateUserTweetParams>,
@@ -77,6 +77,9 @@ pub(crate) async fn create_user_tweet(
     session: CurrentSession,
 ) -> impl IntoResponse {
     let user_id = session.0.get::<u64>("user_id");
+    dbg!(&user_id);
+    dbg!(&payload.content);
+    dbg!(&session.0);
     match user_id {
         Some(user_id) => {
             let tweet = UserTweet {
@@ -93,12 +96,12 @@ pub(crate) async fn create_user_tweet(
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(serde::Deserialize)]
 pub struct CreateFollowRelationParams {
-    pub followee_id: u64,
+    pub name: String,
 }
 
-#[axum_macros::debug_handler]
+// フォローAPI
 pub(crate) async fn create_follow_relation(
     Json(payload): Json<CreateFollowRelationParams>,
     arc_pool: Extension<Arc<Pool<MySql>>>,
@@ -107,13 +110,13 @@ pub(crate) async fn create_follow_relation(
     let user_id = session.0.get::<u64>("user_id");
     match user_id {
         Some(user_id) => {
-            let result = User::find_by_id(payload.followee_id, &arc_pool).await;
+            let result = User::find_by_name(&payload.name, &arc_pool).await;
             match result {
-                Ok(user) => match user {
-                    Some(_) => {
+                Ok(followee) => match followee {
+                    Some(followee) => {
                         let follow_relation = FollowRelation {
                             id: None,
-                            followee_id: payload.followee_id,
+                            followee_id: followee.id.unwrap(),
                             follower_id: user_id,
                         };
                         match follow_relation.insert(&arc_pool).await {
@@ -130,7 +133,6 @@ pub(crate) async fn create_follow_relation(
     }
 }
 
-#[axum_macros::debug_handler]
 pub(crate) async fn get_timeline(
     arc_pool: Extension<Arc<Pool<MySql>>>,
     session: CurrentSession,
@@ -138,7 +140,7 @@ pub(crate) async fn get_timeline(
     let user_id = session.0.get::<u64>("user_id");
     match user_id {
         Some(user_id) => {
-            let tweets = UserTweet::find_by_follower_id(user_id, &arc_pool).await;
+            let tweets = timeline(user_id, &arc_pool).await;
             match tweets {
                 Ok(tweets) => Ok(axum::Json(tweets)),
                 Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
@@ -154,11 +156,11 @@ pub async fn run_server(
 ) -> anyhow::Result<()> {
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 8888));
     let app = Router::new()
-        .route("/users", post(create_user))
-        .route("/sessions", post(create_session))
-        .route("/user_tweets", post(create_user_tweet))
-        .route("/follow_relations", post(create_follow_relation))
-        .route("/pages/timeline", get(get_timeline))
+        .route("/api/users", post(create_user))
+        .route("/api/sessions", post(create_session))
+        .route("/api/user_tweets", post(create_user_tweet))
+        .route("/api/follow_relations", post(create_follow_relation))
+        .route("/api/pages/timeline", get(get_timeline))
         .layer(Extension(arc_pool))
         .layer(Extension(session_store));
     axum::Server::bind(&addr)
@@ -192,7 +194,9 @@ where
             .map(|cookie| cookie.value())
             .unwrap_or("")
             .to_string();
+        dbg!(&session_id);
         let session_data = store.load_session(session_id).await;
+        dbg!(&session_data);
         match session_data {
             Ok(session_data) => match session_data {
                 Some(session_data) => Ok(CurrentSession(session_data)),
