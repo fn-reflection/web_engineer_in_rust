@@ -40,15 +40,7 @@ impl User {
             .await
     }
 
-    pub async fn find_by_id(id: u64, pool: &Pool<MySql>) -> Result<Option<User>, sqlx::Error> {
-        let sql = format!(r#"SELECT * FROM {} WHERE id = ?;"#, Self::TABLE_NAME);
-        let result = sqlx::query_as::<_, User>(&sql)
-            .bind(id)
-            .fetch_optional(pool)
-            .await;
-        result
-    }
-
+    // 指定ユーザ名からUser構造体を取得
     pub async fn find_by_name(name: &str, pool: &Pool<MySql>) -> Result<Option<User>, sqlx::Error> {
         let sql = format!(r#"SELECT * FROM {} WHERE name = ?;"#, Self::TABLE_NAME);
         let result = sqlx::query_as::<_, User>(&sql)
@@ -58,6 +50,7 @@ impl User {
         result
     }
 
+    // UserデータをRDBに永続化する
     pub async fn insert(&self, pool: &Pool<MySql>) -> Result<MySqlQueryResult, sqlx::Error> {
         let sql = format!(r#"INSERT INTO {} (name) VALUES (?);"#, Self::TABLE_NAME);
         let result = sqlx::query(&sql).bind(&self.name).execute(pool).await;
@@ -89,68 +82,7 @@ impl UserTweet {
             .await;
         result
     }
-
-    pub async fn find_by_follower_id(
-        follower_id: u64,
-        pool: &Pool<MySql>,
-    ) -> Result<Vec<Self>, sqlx::Error> {
-        let mut ids = FollowRelation::find_by_follower_id(follower_id, &pool)
-            .await?
-            .into_iter()
-            .map(|r| r.followee_id)
-            .collect::<HashSet<_>>();
-        ids.insert(follower_id);
-        let placeholders = format!("?{}", ",?".repeat(ids.len() - 1));
-        let sql = format!(
-            r#"SELECT * FROM {} WHERE user_id IN ({}) ORDER BY id DESC;"#,
-            Self::TABLE_NAME,
-            placeholders
-        );
-        let mut query = sqlx::query_as::<_, Self>(&sql);
-        for id in ids {
-            query = query.bind(id);
-        }
-        let result = query.fetch_all(pool).await;
-        result
-    }
 }
-
-#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
-pub struct TimelineItem {
-    name: String,
-    content: String,
-}
-
-pub async fn timeline(
-    follower_id: u64,
-    pool: &Pool<MySql>,
-) -> Result<Vec<TimelineItem>, sqlx::Error> {
-    let mut ids = FollowRelation::find_by_follower_id(follower_id, &pool)
-        .await?
-        .into_iter()
-        .map(|r| r.followee_id)
-        .collect::<HashSet<_>>();
-    ids.insert(follower_id);
-    let placeholders = format!("?{}", ",?".repeat(ids.len() - 1));
-    let sql = format!(
-        r#"
-          SELECT users.name as name, user_tweets.content as content
-          FROM user_tweets
-          INNER JOIN users
-          ON user_tweets.user_id = users.id
-          WHERE user_id IN ({}) 
-          ORDER BY user_tweets.id DESC;
-        "#,
-        placeholders
-    );
-    let mut query = sqlx::query_as::<_, TimelineItem>(&sql);
-    for id in ids {
-        query = query.bind(id);
-    }
-    let result = query.fetch_all(pool).await;
-    result
-}
-
 
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct FollowRelation {
@@ -191,6 +123,47 @@ impl FollowRelation {
             .await;
         result
     }
+}
+
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
+pub struct TimelineItem {
+    name: String,
+    content: String,
+}
+// タイムラインデータを返す
+// 本当はページネーションなどが必要
+pub async fn timeline(
+    follower_id: u64,
+    pool: &Pool<MySql>,
+) -> Result<Vec<TimelineItem>, sqlx::Error> {
+    // フォローしているユーザIDを列挙
+    let mut ids = FollowRelation::find_by_follower_id(follower_id, &pool)
+        .await?
+        .into_iter()
+        .map(|r| r.followee_id)
+        .collect::<HashSet<_>>();
+    // タイムラインには自分自身の投稿も含める
+    ids.insert(follower_id);
+    // 現在のsqlxではIN句に配列を直接bindできないのでハックする
+    // idの個数分パラメータをbindする
+    let placeholders = format!("?{}", ",?".repeat(ids.len() - 1));
+    let sql = format!(
+        r#"
+          SELECT users.name as name, user_tweets.content as content
+          FROM user_tweets
+          INNER JOIN users
+          ON user_tweets.user_id = users.id
+          WHERE user_id IN ({}) 
+          ORDER BY user_tweets.id DESC;
+        "#,
+        placeholders
+    );
+    let mut query = sqlx::query_as::<_, TimelineItem>(&sql);
+    for id in ids {
+        query = query.bind(id);
+    }
+    let result = query.fetch_all(pool).await;
+    result
 }
 
 // MySQLではINDEXにIF NOT EXISTSを宣言できないのでエラーハンドリングする

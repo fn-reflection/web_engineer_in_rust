@@ -7,12 +7,13 @@ fn main() -> anyhow::Result<()> {
 }
 
 async fn run() -> anyhow::Result<()> {
-    // 本番データベースに接続するクライアントプールを作成
-    let pool = create_pool(DB_STRING_PRODUCTION).await?;
+    // 本番DBにセッションテーブルを作成
     let session_store = async_sqlx_session::MySqlSessionStore::new(DB_STRING_PRODUCTION).await?;
     session_store.migrate().await?;
 
-    // 本番データベースにiris_measurementsテーブルを作成
+    // 本番DBに接続するクライアントプールを作成
+    let pool = create_pool(DB_STRING_PRODUCTION).await?;
+    // 本番DBにその他テーブルを作成
     setup_tables(&pool).await;
     Ok(())
 }
