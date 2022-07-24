@@ -5,15 +5,25 @@ name = "ruitter"
 version = "0.1.0"
 
 [dependencies]
+# 便利なエラーハンドリングライブラリ
 anyhow = "1.0.58"
+# セッションライブラリ
 async-session = "3.0.0"
+# セッションデータをRDBに格納するためのライブラリ
 async-sqlx-session = {version = "0.4.0", features = ["mysql"]}
+# Webフレームワーク
 axum = {version = "0.5.13", features = ["headers", "http2", "ws", "tower-log"]}
+# Cookie管理に便利なユーティリティがあるので使用
 axum-extra = {version = "0.3.6", features = ["cookie"]}
+# 非同期処理の基本ライブラリ
 futures = "0.3.21"
+# シリアライズ・デシリアライズのライブラリ
 serde = "1.0.140"
+# JSONとRust構造体間をシリアライズ・デシリアライズするためのライブラリ
 serde_json = "1.0.82"
+# RustからRDBを扱うためのライブラリ
 sqlx = {version = "0.6.0", features = ["runtime-tokio-native-tls", "mysql", "chrono", "json"]}
+# 非同期ランタイムライブラリ
 tokio = {version = "1.17.0", features = ["full"]}
 
 [[bin]]
