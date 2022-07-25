@@ -69,10 +69,10 @@ pub(crate) async fn create_session(
                         // 成功したらSet-Cookieレスポンスヘッダを通じてクッキーを更新
                         cookie_jar.add(
                             Cookie::build(AXUM_SESSION_COOKIE_KEY, cookie_value.unwrap())
-                                // HTTPのみ対応しているので
+                                // HTTPS(TLS)非対応なのでfalseとした
                                 .secure(false)
                                 .http_only(true)
-                                .max_age(expire_seconds)
+                                .max_age(cookie::time::Duration::new(expire_seconds as i64, 0))
                                 .finish(),
                         ),
                     )),

@@ -1572,6 +1572,7 @@ dependencies = [
  "async-sqlx-session",
  "axum",
  "axum-extra",
+ "cookie",
  "futures",
  "serde",
  "serde_json",
