@@ -107,7 +107,7 @@ const Ruitter: ()=>JSX.Element =() => {
           </h2>
           <button type="button" onClick={onFetchTimeLine}>タイムライン取得</button>
           {
-            tweets.map(tweet=><div key={`${tweet.name, tweet.content}`}>{`${tweet.name}: ${tweet.content}`}</div>)
+            tweets.map((tweet, index)=><div key={`${index}_${tweet.name}_${tweet.content}`}>{`${tweet.name}: ${tweet.content}`}</div>)
           }
             </div>
         </div>
