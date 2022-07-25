@@ -72,6 +72,7 @@ pub(crate) async fn create_session(
                                 // HTTPS(TLS)非対応なのでfalseとした
                                 .secure(false)
                                 .http_only(true)
+                                .same_site(cookie::SameSite::Lax)
                                 .max_age(cookie::time::Duration::new(expire_seconds as i64, 0))
                                 .finish(),
                         ),
