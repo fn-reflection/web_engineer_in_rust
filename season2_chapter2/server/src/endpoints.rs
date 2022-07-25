@@ -59,14 +59,22 @@ pub(crate) async fn create_session(
             // ユーザー名が存在するならログイン処理
             Some(user) => {
                 let mut session = Session::new();
-                session.expire_in(std::time::Duration::from_secs(86400));
+                let expire_seconds = 86400;
+                session.expire_in(std::time::Duration::from_secs(expire_seconds));
                 session.insert("user_id", user.id).unwrap();
                 // MySQLにセッション保存を試みる
                 match session_store.store_session(session).await {
                     Ok(cookie_value) => Ok((
                         StatusCode::CREATED,
                         // 成功したらSet-Cookieレスポンスヘッダを通じてクッキーを更新
-                        cookie_jar.add(Cookie::new(AXUM_SESSION_COOKIE_KEY, cookie_value.unwrap())),
+                        cookie_jar.add(
+                            Cookie::build(AXUM_SESSION_COOKIE_KEY, cookie_value.unwrap())
+                                // HTTPのみ対応しているので
+                                .secure(false)
+                                .http_only(true)
+                                .max_age(expire_seconds)
+                                .finish(),
+                        ),
                     )),
                     Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
                 }
