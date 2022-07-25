@@ -7,8 +7,11 @@ cargo test -- --test-threads=1 # テストの実行
 
 ## APIサーバの動作検証に有用なコマンド
 ```shell
-curl -X POST -H "Content-Type: application/json" -d '{"name":"abcdeff"}' http://localhost:8888/users # ユーザ新規作成挙動の確認
-curl -v -X POST -H "Content-Type: application/json" -d '{"name":"abcdeffgg"}' http://localhost:8888/sessions # ログイン挙動の確認
+curl -X POST -H "Content-Type: application/json" -d '{"name":"test123"}' http://localhost:8888/api/users # ユーザ新規作成挙動の確認
+curl -X POST -H "Content-Type: application/json" -d '{"name":"test123"}' -c cookie.txt http://localhost:8888/api/sessions # ログイン挙動とCookieの保存
+curl -X POST -H "Content-Type: application/json" -d '{"content":"some tweet"}' -b cookie.txt http://localhost:8888/api/user_tweets # Cookieを使用してメモ作成
+curl -X POST -H "Content-Type: application/json" -d '{"name":"test123"}' -b cookie.txt http://localhost:8888/api/follow_relations # Cookieを使用してフォロー
+curl -H "Content-Type: application/json" -b cookie.txt http://localhost:8888/api/pages/timeline # Cookieを使用してタイムライン取得
 ```
 
 
