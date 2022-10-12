@@ -1,0 +1,16 @@
+[tool.poetry]
+authors = ["NaokiFujita <fujitanaoki0718@gmail.com>"]
+description = "test script for performance comparison between polars and pandas"
+name = "web_engineer_in_rust"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+pandas = "^1.5.0"
+python = "^3.9"
+polars = "^0.14.18"
+
+[tool.poetry.group.dev.dependencies]
+autopep8 = "^1.7.0"
+pylint = "^2.15.4"
+ipython = "^8.5.0"
+
