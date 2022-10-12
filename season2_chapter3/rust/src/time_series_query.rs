@@ -10,9 +10,11 @@ fn get_csv_path(relative_path: &str) -> std::path::PathBuf {
 }
 
 // polarsで移動平均を計算する
-fn by_polars(df: LazyFrame, window_size: Duration) -> anyhow::Result<DataFrame> {
+fn by_polars(df: LazyFrame, window_size: i64) -> anyhow::Result<DataFrame> {
+    let duration = Duration::new(window_size);
     let rolling_options = RollingOptions {
-        window_size,
+        window_size: duration,
+        min_periods: window_size as usize,
         ..RollingOptions::default()
     };
     let features = df
@@ -26,7 +28,7 @@ fn main() -> anyhow::Result<()> {
     // csvを遅延読み込みする
     let df = LazyCsvReader::new(csv_path).has_header(true).finish()?;
     // polarsでの特徴量計算(遅延評価する)
-    let features = by_polars(df, Duration::new(50))?;
+    let features = by_polars(df, 50)?;
     println!("{:?}", features);
     Ok(())
 }
